@@ -1,0 +1,138 @@
+import React, { useState } from 'react';
+import { Save } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+
+const GDDBuilderApp = () => {
+  const [gddData, setGddData] = useState({
+    titlePage: { gameName: '', tagline: '', team: '', lastUpdate: '' },
+    gameOverview: { purpose: '', intendedUse: '', justification: '', targetAudience: '', genre: '' },
+    gameplay: { objectives: '', progression: '', missionStructure: '' },
+    mechanics: { rules: '', universe: '', characterActions: '', screenFlow: '', gameOptions: '', replayingSaving: '' },
+    storyNarrative: { backstory: '', plotElements: '', storyProgression: '' },
+    gameWorld: { lookAndFeel: '', areas: '' },
+    charactersOpponents: { playerAvatar: '', characterList: '', characterDetails: '' },
+    levels: { generalDescription: '', levelDetails: '', training: '', assessment: '', progression: '' },
+    userInterface: { visualSystem: '', controlSystem: '', audioMusic: '', gameArt: '', helpSystem: '', settings: '' },
+    feedback: { playerFeedback: '' },
+    deployment: { deploymentDetails: '' },
+    development: { developmentDetails: '' }
+  });
+
+  const handleInputChange = (section, field, value) => {
+    setGddData(prevData => ({
+      ...prevData,
+      [section]: {
+        ...prevData[section],
+        [field]: value
+      }
+    }));
+  };
+
+  const generateDocumentContent = () => {
+    return Object.entries(gddData).map(([section, fields]) => {
+      return `${section.toUpperCase()}\n\n${Object.entries(fields).map(([field, value]) => 
+        `${field}: ${value}`
+      ).join('\n\n')}\n\n`;
+    }).join('\n---\n\n');
+  };
+
+  const handleSave = (format) => {
+    const content = generateDocumentContent();
+    let blob;
+    let filename;
+
+    if (format === 'txt') {
+      blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      filename = 'GameDesignDocument.txt';
+    } else if (format === 'pdf') {
+      // Note: This doesn't actually create a PDF, it's just a placeholder
+      blob = new Blob([content], { type: 'application/pdf' });
+      filename = 'GameDesignDocument.pdf';
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const renderSection = (section, fields) => (
+    <TabsContent value={section}>
+      <Card>
+        <CardHeader>
+          <CardTitle>{section.replace(/([A-Z])/g, ' $1').trim()}</CardTitle>
+          <CardDescription>Fill in the details for this section of your GDD.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {Object.entries(fields).map(([field, value]) => (
+            <div key={field} className="space-y-2">
+              <Label htmlFor={field}>{field.replace(/([A-Z])/g, ' $1').trim()}</Label>
+              {field.includes('details') || field === 'backstory' || field === 'plotElements' || field === 'storyProgression' ? (
+                <Textarea
+                  id={field}
+                  value={value}
+                  onChange={(e) => handleInputChange(section, field, e.target.value)}
+                  placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').trim().toLowerCase()} here`}
+                  className="h-32"
+                />
+              ) : (
+                <Input
+                  id={field}
+                  value={value}
+                  onChange={(e) => handleInputChange(section, field, e.target.value)}
+                  placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').trim().toLowerCase()} here`}
+                />
+              )}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </TabsContent>
+  );
+
+  return (
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-4">Game Design Document Builder</h1>
+      
+      <Alert className="mb-4">
+        <AlertTitle>Welcome to the GDD Builder!</AlertTitle>
+        <AlertDescription>
+          Fill out each section to create your Game Design Document. This tool provides a starting point for your GDD, which you can further edit and expand.
+        </AlertDescription>
+      </Alert>
+
+      <Tabs defaultValue="titlePage" className="space-y-4">
+        <TabsList className="flex flex-wrap">
+          {Object.keys(gddData).map((section) => (
+            <TabsTrigger key={section} value={section} className="mb-2">
+              {section.replace(/([A-Z])/g, ' $1').trim()}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {Object.entries(gddData).map(([section, fields]) => renderSection(section, fields))}
+      </Tabs>
+
+      <div className="mt-6 space-x-4">
+        <Button onClick={() => handleSave('txt')} className="flex items-center">
+          <Save className="mr-2 h-4 w-4" /> Save as TXT
+        </Button>
+        <Button onClick={() => handleSave('pdf')} className="flex items-center">
+          <Save className="mr-2 h-4 w-4" /> Save as PDF
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export default GDDBuilderApp;
